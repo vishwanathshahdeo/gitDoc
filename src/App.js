@@ -150,7 +150,7 @@ class App extends Component {
   }
   userChange = (e)=>{
     this.setState({username:e.target.value});
-    console.log("name",this.state.username);
+    
   }
   //date from
 onChangeFrom = (d) => {
