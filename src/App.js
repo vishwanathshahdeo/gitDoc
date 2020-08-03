@@ -223,8 +223,8 @@ const ref = React.createRef();
                </Button>
         )}</Pdf>
     
-
-      <TableContainer style={{background:"#ffda99"}} ref={ref} >
+<div ref={ref}>
+      <TableContainer style={{background:"#ffda99", width:"67%"}}  >
       <Table  size="small" aria-label="a dense table">
           <TableHead>
 
@@ -250,7 +250,7 @@ const ref = React.createRef();
   </TableBody>
           </Table>
           </TableContainer>
-          
+          </div>
       </div>
       
       
