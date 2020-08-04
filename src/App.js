@@ -120,14 +120,24 @@ class App extends Component {
          {"created_at" : this.state.dateT} //to
         );
  console.log("resultIndex",resultIndexes);
+
+ 
       this.updateResultIndexes(resultIndexes.lower,resultIndexes.upper);
       var commitdata = [];
 
+console.log("com", result[0]);
+
        for(var i = resultIndexes.lower; i<=resultIndexes.upper; i++){
+         
+        
 
         if("commits" in result[i].payload){
+          
+
+          console.log("comi........",result[i]);
           var commits = result[i].payload.commits;
           for(var x=0; x< commits.length; x++){
+            
 
             commitdata.push({
               date : result[i].created_at,
