@@ -12,7 +12,7 @@ import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
+
 
 class App extends Component {
   state={
@@ -24,7 +24,8 @@ class App extends Component {
     sLowerIndex:-1,
     sUpperIndex:-1,
     pdfdata : [],
-    commitdata : []
+    commitdata : [],
+    comments : []
   }
 // search algorithm
   lowerIndex = (list, start, end, sv, comparator) => {
@@ -93,68 +94,99 @@ class App extends Component {
 
   fetchData =() => {
 
+    console.log(this.state.dateF);
+    console.log(this.state.dateT);
+
     if(Date.parse(this.state.dateF) <= Date.parse(this.state.dateT) ){
-    axios.get(
-      `https://api.github.com/users/${this.state.username}/events`
-    ).then(response => {
-      if(response.data.length===0){
-        return alert("data not found");;
-      }
-      var result = response.data;
-      console.log("values",response.data);
-      var oldest = Date.parse(response.data[response.data.length-1].created_at);
-      var newest = Date.parse(response.data[0].created_at);
-      //range oldest-newest
-      var searchFrom = Date.parse(this.state.dateF);
-      var searchTo = Date.parse(this.state.dateT);
+      axios.get(
+        `https://api.github.com/users/${this.state.username}/events`
+      ).then(response => {
+        if(response.data.length===0){
+          return alert("data not found");;
+        }
+        var result = response.data;
+        console.log("values",response.data);
+        var oldest = Date.parse(response.data[response.data.length-1].created_at);
+        var newest = Date.parse(response.data[0].created_at);
+        //range oldest-newest
+        var searchFrom = Date.parse(this.state.dateF);
+        var searchTo = Date.parse(this.state.dateT);
 
-      if(searchFrom > newest || searchTo < oldest){
-        //not active in this period.
-        this.setState({commitdata:[]});
-       alert("user not active in this period");
-       return;
-      }
-      var resultIndexes = this.filterEvents(
-        response.data,
-         {"created_at" : this.state.dateF}, //from
-         {"created_at" : this.state.dateT} //to
-        );
- console.log("resultIndex",resultIndexes);
+        if(searchFrom > newest || searchTo < oldest){
+          //not active in this period.
+          this.setState({commitdata:[]});
+        alert("user not active in this period");
+        return;
+        }
+        var resultIndexes = this.filterEvents(
+          response.data,
+          {"created_at" : this.state.dateF}, //from
+          {"created_at" : this.state.dateT} //to
+          );
+        console.log("resultIndex",resultIndexes);
 
- 
-      this.updateResultIndexes(resultIndexes.lower,resultIndexes.upper);
-      var commitdata = [];
+  
+        this.updateResultIndexes(resultIndexes.lower,resultIndexes.upper);
+        var commitdata = [];
+        var comments = []; 
+        console.log("com", result[0]);
 
-console.log("com", result[0]);
-
-       for(var i = resultIndexes.lower; i<=resultIndexes.upper; i++){
-         
-        
-
-        if("commits" in result[i].payload){
+        for(var i = resultIndexes.lower; i<=resultIndexes.upper; i++){
           
-
-          console.log("comi........",result[i]);
-          var commits = result[i].payload.commits;
-          for(var x=0; x< commits.length; x++){
-            
-
-            commitdata.push({
+          if("comment" in result[i].payload ){
+            comments.push({
+              name: result[i].actor.login,
               date : result[i].created_at,
-              message : ("message" in commits[x] ? commits[x].message : "N.A."),
-              reponame : result[i].repo.name
+              type : "FilesChanged",
+              message : ("body" in result[i].payload.comment ? result[i].payload.comment.body : "N.A."),
+              
             });
           }
-        } 
-      }
-      //if(commitdata.length <= 0){
-        //alert("no data found in provided period");
-      //}
-       console.log("length",result.length);
-       console.log("all commit", commitdata);
-       this.setState({commitdata : commitdata});
-      console.log("=====================", resultIndexes);
-    })
+
+          //------------------------------------------------------
+
+          if("commits" in result[i].payload){
+            console.log("name",result[i].actor.login);
+                        console.log("comi........",result[i]);
+            var commits = result[i].payload.commits;
+            for(var x=0; x< commits.length; x++){
+              
+              if("message" in commits[x]){
+                comments.push({
+                  name: result[i].actor.login,
+                  date : result[i].created_at,
+                  type : "Commit",
+                  message : commits[x].message,
+                  
+                });
+              }
+            }
+          } 
+
+          if("pull_request" in result[i].payload){
+            if("body" in result[i].payload.pull_request){
+              comments.push({
+                name: result[i].actor.login,
+                date : result[i].created_at,
+                type : "Pull Request",
+                message : result[i].payload.pull_request.body,
+                
+              });
+            }
+          }
+          
+
+        }
+        //if(commitdata.length <= 0){
+          //alert("no data found in provided period");
+        //}
+        console.log(comments);
+        this.setState({comments : comments});
+        console.log("length",result.length);
+        console.log("all commit", commitdata);
+        this.setState({commitdata : commitdata});
+        console.log("=====================", resultIndexes);
+      })
   }
   else{
     alert("wrong date range selected");
@@ -171,7 +203,8 @@ onChangeFrom = (d) => {
     var MYDateString;
     MYDateString = MYdate.getFullYear() + '-' 
     + ('0' + (MYdate.getMonth()+1)).slice(-2) + '-'
-    +  ('0' + MYdate.getDate()).slice(-2);
+    +  ('0' + MYdate.getDate()).slice(-2)+"T00:00:00Z";
+    //"2020-08-04T11:32:39Z"
                  console.log("mdds",MYDateString);
                  this.setState({dateF: MYDateString});            
       });
@@ -183,14 +216,14 @@ onChangeTo = (date) => {
 var MyDateString;
 MyDateString = MyDate.getFullYear() + '-' 
 + ('0' + (MyDate.getMonth()+1)).slice(-2) + '-'
-+  ('0' + MyDate.getDate()).slice(-2);
++  ('0' + MyDate.getDate()).slice(-2)+"T23:59:59Z";;
              this.setState({dateT:MyDateString});
   });}
 
   
 render(){
 
-const {username, dateFrom, dateTo, commitdata}= this.state;
+const {username, dateFrom, dateTo, commitdata, comments}= this.state;
 const ref = React.createRef();
 
   return (
@@ -208,6 +241,7 @@ const ref = React.createRef();
 
             <b>From</b>
             <DatePicker
+            style={{height:"50px"}}
             dateFormat="yyyy-MM-dd"
         selected={dateFrom}
         onChange={this.onChangeFrom}
@@ -236,31 +270,36 @@ const ref = React.createRef();
         )}</Pdf>
      
 <div ref={ref}>
-      <TableContainer style={{background:"#ffda99", width:"66%"}}  >
+      <TableContainer style={{background:"#ffda99", width:"100%"}}  >
       <Table  size="small" aria-label="a dense table">
           <TableHead>
 
             <TableRow>
 
-              <TableCell><b>Commit Date</b></TableCell><TableCell><b>Commit Comment</b></TableCell><TableCell><b>Repo Name</b></TableCell>
+            <TableCell><b>Name</b></TableCell><TableCell><b>Date</b></TableCell><TableCell><b>Type</b></TableCell><TableCell><b>comment</b></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
         {
-          commitdata.map((item, index)=> { 
+          comments.map((item, index)=> { 
            
 
             return ( 
               <TableRow key={index}>
+                <TableCell>{item.name}</TableCell>
                 <TableCell>{item.date}</TableCell>
+                <TableCell>{item.type}</TableCell>
                 <TableCell>{item.message}</TableCell>
-                <TableCell>{item.reponame}</TableCell>
+               
               </TableRow>
               
             );
           })}
   </TableBody>
           </Table>
+
+
+
           </TableContainer>
           </div>
       </div>
