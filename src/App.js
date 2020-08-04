@@ -110,7 +110,9 @@ class App extends Component {
 
       if(searchFrom > newest || searchTo < oldest){
         //not active in this period.
-        return alert("user not active in this period");
+        this.setState({commitdata:[]});
+       alert("user not active in this period");
+       return;
       }
       var resultIndexes = this.filterEvents(
         response.data,
@@ -214,7 +216,7 @@ const ref = React.createRef();
         </Button>
         <br />
       
-        <Pdf targetRef={ref} filename="git-contributorData.pdf" >
+        <Pdf targetRef={ref} filename="git-contributorDataN.pdf" >
         {({toPdf}) => (
             <Button variant="contained"
             color="primary"
@@ -224,7 +226,7 @@ const ref = React.createRef();
         )}</Pdf>
     
 <div ref={ref}>
-      <TableContainer style={{background:"#ffda99", width:"67%"}}  >
+      <TableContainer style={{background:"#ffda99", width:"66%"}}  >
       <Table  size="small" aria-label="a dense table">
           <TableHead>
 
