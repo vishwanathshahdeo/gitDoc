@@ -224,7 +224,7 @@ const ref = React.createRef();
                Generate pdf
                </Button>
         )}</Pdf>
-    
+     
 <div ref={ref}>
       <TableContainer style={{background:"#ffda99", width:"66%"}}  >
       <Table  size="small" aria-label="a dense table">
